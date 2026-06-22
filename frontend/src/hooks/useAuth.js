@@ -1,3 +1,2 @@
-export default function useAuth() {
-  return { user: null };
-}
+export { useAuth as default } from '../context/AuthContext';
+
