@@ -1,10 +1,12 @@
-import dotenv from 'dotenv';
-import app from './src/app.js';
+import express from "express";
 
-dotenv.config();
 
-const port = process.env.PORT || 5000;
+const app = express();
 
-app.listen(port, () => {
-  console.log(`Server running on port ${port}`);
+app.get("/", (req, res) => {
+  res.send("Hospital Management API Running");
+});
+
+app.listen(5000, () => {
+  console.log("Server running on port 5000");
 });
