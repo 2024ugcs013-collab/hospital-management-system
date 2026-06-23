@@ -5,8 +5,7 @@ import Button from '../../components/common/Button';
 import FormField from '../../components/common/FormField';
 import AuthForm from '../../components/forms/AuthForm';
 import { useAuth } from '../../context/AuthContext';
-import { AUTH_TABS, USER_ROLES } from '../../utils/constants';
-import { fileListToNames } from '../../utils/helpers';
+import { AUTH_TABS, ROLE_DASHBOARD_PATHS, USER_ROLES } from '../../utils/constants';
 
 const fileAccept = '.pdf,.jpg,.jpeg,.png';
 
@@ -16,8 +15,10 @@ function strongPassword(value) {
 
 export default function Register() {
   const [role, setRole] = useState(USER_ROLES.PATIENT);
+  const [message, setMessage] = useState('');
+  const [uploadProgress, setUploadProgress] = useState(0);
   const navigate = useNavigate();
-  const { register: saveUser } = useAuth();
+  const { registerPatient, registerDoctor } = useAuth();
 
   const {
     register,
@@ -38,30 +39,50 @@ export default function Register() {
     },
   });
 
-  const degreeFileNames = fileListToNames(watch('degreeCertificate'));
-  const licenseFileNames = fileListToNames(watch('licenseCertificate'));
-
   const switchRole = (nextRole) => {
     setRole(nextRole);
+    setMessage('');
+    setUploadProgress(0);
     reset();
   };
 
   const onSubmit = async (values) => {
-    const payload = {
-      role,
-      fullName: values.fullName,
-      email: values.email,
-      phone: values.phone,
-      specialization: values.specialization || '',
-      experience: values.experience || '',
-      medicalLicenseNumber: values.medicalLicenseNumber || '',
-      degreeCertificateName: values.degreeCertificate?.[0]?.name || '',
-      licenseCertificateName: values.licenseCertificate?.[0]?.name || '',
-      password: values.password,
-    };
+    try {
+      setMessage('');
+      if (role === USER_ROLES.PATIENT) {
+        await registerPatient({
+          name: values.fullName,
+          email: values.email,
+          phone: values.phone,
+          password: values.password,
+        });
+      } else {
+        const payload = {
+          name: values.fullName,
+          email: values.email,
+          phone: values.phone,
+          specialization: values.specialization,
+          experience: values.experience,
+          licenseNumber: values.medicalLicenseNumber,
+          degreeCertificate: values.degreeCertificate?.[0],
+          licenseCertificate: values.licenseCertificate?.[0],
+          password: values.password,
+        };
 
-    await saveUser(payload);
-    navigate('/login', { replace: true, state: { registeredEmail: values.email } });
+        await registerDoctor(payload, (event) => {
+          if (event.total) {
+            setUploadProgress(Math.round((event.loaded * 100) / event.total));
+          }
+        });
+      }
+
+      setMessage('Registration successful. Redirecting to login...');
+      window.setTimeout(() => {
+        navigate('/login', { replace: true, state: { registeredEmail: values.email } });
+      }, 900);
+    } catch (error) {
+      setMessage(error.response?.data?.message || error.message);
+    }
   };
 
   return (
@@ -78,8 +99,22 @@ export default function Register() {
         <div>
           <p className="text-sm font-semibold uppercase tracking-[0.3em] text-brand-600">Register</p>
           <h2 className="mt-3 text-3xl font-semibold text-slate-950">Create Account</h2>
-    
+          <p className="mt-2 text-sm text-slate-500">Patient is selected by default. Switch to doctor when needed.</p>
         </div>
+
+        {message ? <div className="rounded-2xl border border-brand-200 bg-brand-50 px-4 py-3 text-sm text-brand-800">{message}</div> : null}
+
+        {role === USER_ROLES.DOCTOR && uploadProgress > 0 ? (
+          <div className="rounded-2xl border border-slate-200 bg-white p-4">
+            <div className="mb-2 flex items-center justify-between text-sm text-slate-600">
+              <span>Upload progress</span>
+              <span>{uploadProgress}%</span>
+            </div>
+            <div className="h-2 overflow-hidden rounded-full bg-slate-100">
+              <div className="h-full rounded-full bg-brand-600 transition-all" style={{ width: `${uploadProgress}%` }} />
+            </div>
+          </div>
+        ) : null}
 
         <div className="grid grid-cols-2 gap-2 rounded-2xl bg-slate-100 p-1">
           {AUTH_TABS.map((tab) => (
@@ -169,7 +204,7 @@ export default function Register() {
                 className="block w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-600 shadow-sm file:mr-4 file:rounded-full file:border-0 file:bg-brand-600 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white"
                 {...register('degreeCertificate', { required: 'Degree certificate is required.' })}
               />
-              <p className="text-xs text-slate-500">{degreeFileNames.join(', ') || 'No file selected'}</p>
+              <p className="text-xs text-slate-500">{watch('degreeCertificate')?.[0]?.name || 'No file selected'}</p>
               {errors.degreeCertificate?.message ? <p className="text-sm text-rose-600">{errors.degreeCertificate.message}</p> : null}
             </label>
 
@@ -181,7 +216,7 @@ export default function Register() {
                 className="block w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-600 shadow-sm file:mr-4 file:rounded-full file:border-0 file:bg-brand-600 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white"
                 {...register('licenseCertificate', { required: 'License certificate is required.' })}
               />
-              <p className="text-xs text-slate-500">{licenseFileNames.join(', ') || 'No file selected'}</p>
+              <p className="text-xs text-slate-500">{watch('licenseCertificate')?.[0]?.name || 'No file selected'}</p>
               {errors.licenseCertificate?.message ? <p className="text-sm text-rose-600">{errors.licenseCertificate.message}</p> : null}
             </label>
           </>
@@ -215,7 +250,9 @@ export default function Register() {
           Create Account
         </Button>
 
-        
+        <p className="rounded-2xl border border-brand-100 bg-brand-50 p-4 text-sm text-slate-700">
+          File uploads are sent as FormData. Allowed formats: PDF, JPG, and PNG.
+        </p>
       </form>
     </AuthForm>
   );

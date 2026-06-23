@@ -1,50 +1,107 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
-import { authenticateMockUser, clearSession, hydrateSession, registerMockUser } from '../data/mockAuth';
+import api from '../services/api';
+import { getCurrentUser as fetchCurrentUser, login as loginRequest, logout as clearAuthSession, registerDoctor as registerDoctorRequest, registerPatient as registerPatientRequest } from '../services/authService';
+import { AUTH_STORAGE_KEYS } from '../utils/constants';
 
 export const AuthContext = createContext(null);
 
-// Centralized mock auth state for Phase 1. The session persists across refreshes via localStorage.
 export function AuthProvider({ children }) {
-  const [token, setToken] = useState('');
+  const [token, setToken] = useState(() => window.localStorage.getItem(AUTH_STORAGE_KEYS.token) || '');
   const [user, setUser] = useState(null);
-  const [ready, setReady] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const session = hydrateSession();
-    setToken(session.token || '');
-    setUser(session.user || null);
-    setReady(true);
+    let active = true;
+
+    async function restoreSession() {
+      const storedToken = window.localStorage.getItem(AUTH_STORAGE_KEYS.token);
+      const storedUser = window.localStorage.getItem(AUTH_STORAGE_KEYS.user);
+
+      if (!storedToken) {
+        if (active) {
+          setLoading(false);
+        }
+
+        return;
+      }
+
+      if (storedUser) {
+        setUser(JSON.parse(storedUser));
+      }
+
+      api.defaults.headers.common.Authorization = `Bearer ${storedToken}`;
+
+      try {
+        const response = await fetchCurrentUser();
+        if (!active) {
+          return;
+        }
+
+        setUser(response.user);
+        setToken(storedToken);
+        window.localStorage.setItem(AUTH_STORAGE_KEYS.user, JSON.stringify(response.user));
+      } catch (_error) {
+        clearAuthSession();
+        if (active) {
+          setToken('');
+          setUser(null);
+        }
+      } finally {
+        if (active) {
+          setLoading(false);
+        }
+      }
+    }
+
+    restoreSession();
+
+    return () => {
+      active = false;
+    };
   }, []);
 
-  const login = async ({ email, password }) => {
-    const session = authenticateMockUser(email, password);
+  const persistSession = (session) => {
     setToken(session.token);
     setUser(session.user);
-    return session.user;
+    window.localStorage.setItem(AUTH_STORAGE_KEYS.token, session.token);
+    window.localStorage.setItem(AUTH_STORAGE_KEYS.user, JSON.stringify(session.user));
+    api.defaults.headers.common.Authorization = `Bearer ${session.token}`;
+  };
+
+  const login = async (payload) => {
+    const session = await loginRequest(payload);
+    persistSession(session);
+    return session;
   };
 
   const logout = () => {
-    clearSession();
+    clearAuthSession();
+    delete api.defaults.headers.common.Authorization;
     setToken('');
     setUser(null);
   };
 
-  const register = async (payload) => {
-    return registerMockUser(payload);
+  const registerPatient = async (payload) => {
+    return registerPatientRequest(payload);
+  };
+
+  const registerDoctor = async (payload, onUploadProgress) => {
+    return registerDoctorRequest(payload, onUploadProgress);
   };
 
   const value = useMemo(
     () => ({
       login,
       logout,
-      register,
+      registerPatient,
+      registerDoctor,
       user,
       token,
-      ready,
+      loading,
       isAuthenticated: Boolean(token && user),
       userRole: user?.role || null,
     }),
-    [ready, token, user]
+    [loading, token, user]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

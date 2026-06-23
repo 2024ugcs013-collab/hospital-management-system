@@ -1,16 +1,17 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import Button from '../../components/common/Button';
 import FormField from '../../components/common/FormField';
 import AuthForm from '../../components/forms/AuthForm';
 import { useAuth } from '../../context/AuthContext';
-import { getDashboardPath } from '../../utils/helpers';
+import { ROLE_DASHBOARD_PATHS } from '../../utils/constants';
 
 export default function Login() {
   const { login, isAuthenticated, userRole } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const [successMessage, setSuccessMessage] = useState('');
   const {
     register,
     handleSubmit,
@@ -26,14 +27,20 @@ export default function Login() {
 
   useEffect(() => {
     if (isAuthenticated && userRole) {
-      navigate(getDashboardPath(userRole), { replace: true });
+      navigate(ROLE_DASHBOARD_PATHS[userRole], { replace: true });
     }
   }, [isAuthenticated, navigate, userRole]);
 
+  useEffect(() => {
+    if (location.state?.registeredEmail) {
+      setSuccessMessage(`Account created for ${location.state.registeredEmail}. Sign in below.`);
+    }
+  }, [location.state]);
+
   const onSubmit = async (values) => {
     try {
-      const user = await login(values);
-      navigate(getDashboardPath(user.role), { replace: true });
+      const session = await login(values);
+      navigate(ROLE_DASHBOARD_PATHS[session.role], { replace: true });
     } catch (error) {
       setError('root', { message: error.message });
     }
@@ -53,15 +60,11 @@ export default function Login() {
         <div>
           <p className="text-sm font-semibold uppercase tracking-[0.3em] text-brand-600">Login</p>
           <h2 className="mt-3 text-3xl font-semibold text-slate-950">Sign in to your account</h2>
-          
+          <p className="mt-2 text-sm text-slate-500">Use your backend-backed account to continue.</p>
         </div>
 
+        {successMessage ? <div className="rounded-2xl border border-brand-200 bg-brand-50 px-4 py-3 text-sm text-brand-800">{successMessage}</div> : null}
         {errors.root?.message ? <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{errors.root.message}</div> : null}
-
-        <div className="rounded-2xl border border-brand-100 bg-brand-50 p-4 text-sm text-slate-700">
-          
-          
-        </div>
 
         <FormField
           label="Email"

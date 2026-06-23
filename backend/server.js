@@ -1,12 +1,22 @@
-import express from "express";
+import dotenv from 'dotenv';
+import app from './src/app.js';
+import connectDB from './src/config/db.js';
 
+dotenv.config();
 
-const app = express();
+const port = process.env.PORT || 5000;
 
-app.get("/", (req, res) => {
-  res.send("Hospital Management API Running");
-});
+async function startServer() {
+  try {
+    await connectDB();
+  } catch (error) {
+    console.warn('MongoDB connection unavailable. Starting API server without a live database connection.');
+    console.warn(error.message);
+  }
 
-app.listen(5000, () => {
-  console.log("Server running on port 5000");
-});
+  app.listen(port, () => {
+    console.log(`Server running on port ${port}`);
+  });
+}
+
+startServer();

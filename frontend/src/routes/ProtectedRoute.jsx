@@ -3,9 +3,9 @@ import Loader from '../components/common/Loader';
 import { useAuth } from '../context/AuthContext';
 
 export default function ProtectedRoute({ children }) {
-  const { ready, isAuthenticated } = useAuth();
+  const { loading, isAuthenticated } = useAuth();
 
-  if (!ready) {
+  if (loading) {
     return (
       <div className="grid min-h-screen place-items-center bg-slate-50">
         <Loader label="Checking session..." />

@@ -4,18 +4,27 @@ import { Link } from 'react-router-dom';
 import Button from '../../components/common/Button';
 import FormField from '../../components/common/FormField';
 import AuthForm from '../../components/forms/AuthForm';
+import { forgotPassword } from '../../services/authService';
 
 export default function ForgotPassword() {
   const [submitted, setSubmitted] = useState(false);
+  const [message, setMessage] = useState('');
   const {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
   } = useForm();
 
-  const onSubmit = async () => {
-    await new Promise((resolve) => window.setTimeout(resolve, 700));
-    setSubmitted(true);
+  const onSubmit = async (values) => {
+    try {
+      setMessage('');
+      await forgotPassword(values);
+      setSubmitted(true);
+      setMessage('Password reset request submitted.');
+    } catch (error) {
+      setSubmitted(false);
+      setMessage(error.response?.data?.message || error.message);
+    }
   };
 
   return (
@@ -35,7 +44,7 @@ export default function ForgotPassword() {
           <p className="mt-2 text-sm text-slate-500">We will validate the email input and show a success state.</p>
         </div>
 
-        {submitted ? <div className="rounded-2xl border border-brand-200 bg-brand-50 px-4 py-3 text-sm text-brand-800">Reset request captured. Backend email integration comes later.</div> : null}
+        {message ? <div className={`rounded-2xl px-4 py-3 text-sm ${submitted ? 'border border-brand-200 bg-brand-50 text-brand-800' : 'border border-rose-200 bg-rose-50 text-rose-700'}`}>{message}</div> : null}
 
         <FormField
           label="Email"
