@@ -89,12 +89,21 @@ export function AuthProvider({ children }) {
     return registerDoctorRequest(payload, onUploadProgress);
   };
 
+  const updateUser = (updates) => {
+    setUser((currentUser) => {
+      const nextUser = { ...currentUser, ...updates };
+      window.localStorage.setItem(AUTH_STORAGE_KEYS.user, JSON.stringify(nextUser));
+      return nextUser;
+    });
+  };
+
   const value = useMemo(
     () => ({
       login,
       logout,
       registerPatient,
       registerDoctor,
+      updateUser,
       user,
       token,
       loading,

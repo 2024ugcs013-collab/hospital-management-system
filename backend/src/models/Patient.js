@@ -28,6 +28,16 @@ const patientSchema = new mongoose.Schema(
 			type: String,
 			default: '',
 		},
+		allergies: {
+			type: String,
+			default: '',
+			trim: true,
+		},
+		medicalConditions: {
+			type: String,
+			default: '',
+			trim: true,
+		},
 	},
 	{
 		timestamps: true,
