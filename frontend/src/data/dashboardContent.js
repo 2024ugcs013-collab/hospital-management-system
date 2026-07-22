@@ -37,10 +37,11 @@ export const dashboardContent = {
     welcomeTitle: 'Review consultations and manage your patient schedule quickly.',
     welcomeText: 'This dashboard keeps appointments, treatment notes, and clinical follow-ups within reach.',
     sidebarItems: [
-      { label: 'Dashboard', href: '#overview' },
-      { label: 'Schedule', href: '#schedule' },
-      { label: 'Patients', href: '#patients' },
-      { label: 'Reports', href: '#reports' },
+      { label: 'Dashboard', href: '/doctor/dashboard' },
+      { label: 'Appointment requests', href: '/doctor/appointments' },
+      { label: 'Schedule', href: '/doctor/schedule' },
+      { label: 'Patients', href: '/doctor/patients' },
+      { label: 'Prescriptions', href: '/doctor/prescriptions' },
     ],
     stats: [
       { title: 'Today appointments', value: '08', description: 'Consults scheduled for today.' },
@@ -99,10 +100,8 @@ export const dashboardContent = {
     welcomeTitle: 'Monitor the full hospital platform from a single command center.',
     welcomeText: 'This admin shell is ready for analytics, user management, department control, and settings.',
     sidebarItems: [
-      { label: 'Dashboard', href: '#overview' },
-      { label: 'Users', href: '#users' },
-      { label: 'Analytics', href: '#analytics' },
-      { label: 'Settings', href: '#settings' },
+      { label: 'Dashboard', href: '/admin/dashboard' },
+      { label: 'Doctor verification', href: '/admin/doctors' },
     ],
     stats: [
       { title: 'Registered users', value: '248', description: 'Seed and mock users in the system.' },

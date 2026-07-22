@@ -1,3 +1,5 @@
-export default function Bills() {
-  return <section>Bills</section>;
-}
+import { useEffect, useState } from 'react';
+import DashboardShell from '../../components/dashboard/DashboardShell';
+import { patientSidebarItems } from '../../data/patientNavigation';
+import { getAppointments } from '../../services/appointmentService';
+export default function Bills() { const [items, setItems] = useState([]); useEffect(() => { getAppointments().then(setItems).catch(() => setItems([])); }, []); return <DashboardShell title="Bills & payments" sidebarItems={patientSidebarItems}><section className="rounded-3xl bg-white p-6 shadow-sm"><h1 className="text-2xl font-bold">Consultation bills</h1><p className="mt-1 text-sm text-slate-500">Payment status for your booked consultations.</p><div className="mt-5 overflow-x-auto"><table className="w-full text-left text-sm"><thead className="border-b text-slate-500"><tr><th className="p-3">Doctor</th><th className="p-3">Date</th><th className="p-3">Amount</th><th className="p-3">Payment</th></tr></thead><tbody>{items.map(a => <tr key={a._id} className="border-b"><td className="p-3 font-medium">{a.doctor?.name || 'Doctor'}</td><td className="p-3">{new Date(a.date).toLocaleDateString()}</td><td className="p-3">₹{a.fee || 0}</td><td className="p-3 capitalize">{a.paymentStatus}</td></tr>)}</tbody></table>{!items.length && <p className="py-10 text-center text-slate-500">No consultation bills yet.</p>}</div></section></DashboardShell>; }

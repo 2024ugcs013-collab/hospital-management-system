@@ -1,0 +1,10 @@
+import { Router } from 'express';
+import { getDoctorApplications, getUsers, verifyDoctor } from '../controllers/adminController.js';
+import { authMiddleware } from '../middleware/authMiddleware.js';
+import { roleMiddleware } from '../middleware/roleMiddleware.js';
+const router = Router();
+router.use(authMiddleware, roleMiddleware('admin'));
+router.get('/users', getUsers);
+router.get('/doctors', getDoctorApplications);
+router.put('/doctors/:id/verification', verifyDoctor);
+export default router;

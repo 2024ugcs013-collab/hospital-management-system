@@ -1,3 +1,5 @@
-export default function Prescriptions() {
-  return <section>Patient Prescriptions</section>;
-}
+import { useEffect, useState } from 'react';
+import DashboardShell from '../../components/dashboard/DashboardShell';
+import { patientSidebarItems } from '../../data/patientNavigation';
+import { getMedicalHistory } from '../../services/patientService';
+export default function Prescriptions() { const [items, setItems] = useState([]); useEffect(() => { getMedicalHistory().then(r => setItems(r.prescriptions || [])).catch(() => setItems([])); }, []); return <DashboardShell title="Prescriptions" sidebarItems={patientSidebarItems}><section className="rounded-3xl bg-white p-6 shadow-sm"><h1 className="text-2xl font-bold">Digital prescriptions</h1><div className="mt-5 space-y-4">{items.map(p => <article key={p._id} className="rounded-2xl border p-5"><p className="font-semibold">{p.doctorId?.name || 'Doctor prescription'}</p><p className="text-sm text-slate-500">Issued {new Date(p.issueDate || p.createdAt).toLocaleDateString()}</p><ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-slate-700">{(p.medicines || []).map((m,i) => <li key={i}>{m.name} — {m.dosage}, {m.duration}</li>)}</ul>{p.notes && <p className="mt-3 text-sm text-slate-600">Notes: {p.notes}</p>}</article>)}{!items.length && <p className="py-10 text-center text-slate-500">No prescriptions available yet.</p>}</div></section></DashboardShell>; }

@@ -1,9 +1,11 @@
 import DashboardShell from './DashboardShell';
 import Button from '../common/Button';
 import { ROLE_LABELS } from '../../utils/constants';
+import { useAuth } from '../../context/AuthContext';
 
 // Shared dashboard layout used by all four role-specific placeholder dashboards.
-export default function DashboardPage({ role, config }) {
+export default function DashboardPage({ role, config, children }) {
+  const { logout } = useAuth();
   return (
     <DashboardShell title={config.title} sidebarItems={config.sidebarItems}>
       <section className="grid place-items-center py-8 sm:py-12">
@@ -18,10 +20,11 @@ export default function DashboardPage({ role, config }) {
           </div>
 
           <div className="mt-8 flex flex-wrap gap-3">
-            <Button className="bg-brand-600 text-white hover:bg-brand-700">Logout</Button>
+            <Button onClick={logout} className="bg-brand-600 text-white hover:bg-brand-700">Logout</Button>
           </div>
         </div>
       </section>
+      {children}
     </DashboardShell>
   );
 }

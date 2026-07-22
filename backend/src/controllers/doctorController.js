@@ -6,7 +6,7 @@ export async function getDoctors(req, res, next) {
     const { search, specialization, minExperience, maxFee, day, rating, gender, sort } = req.query;
 
     // Build the query
-    let userQuery = { role: 'doctor' };
+    let userQuery = { role: 'doctor', isVerified: true };
     if (search) {
       userQuery.name = { $regex: search, $options: 'i' };
     }
@@ -16,7 +16,7 @@ export async function getDoctors(req, res, next) {
     const userIds = matchingUsers.map(u => u._id);
 
     // Build doctor profile query
-    let docQuery = { userId: { $in: userIds } };
+    let docQuery = { userId: { $in: userIds }, verificationStatus: 'approved' };
 
     if (specialization) {
       docQuery.specialization = specialization;

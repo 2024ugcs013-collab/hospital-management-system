@@ -1,3 +1,2 @@
-export default function Schedule() {
-  return <section>Doctor Schedule</section>;
-}
+import { useEffect, useState } from 'react'; import DashboardShell from '../../components/dashboard/DashboardShell'; import { dashboardContent } from '../../data/dashboardContent'; import { USER_ROLES } from '../../utils/constants'; import { getAppointments } from '../../services/appointmentService';
+export default function Schedule() { const [items,setItems]=useState([]); useEffect(()=>{getAppointments('confirmed').then(setItems)},[]); return <DashboardShell title="My schedule" sidebarItems={dashboardContent[USER_ROLES.DOCTOR].sidebarItems}><section className="rounded-3xl bg-white p-6 shadow-sm"><h1 className="text-2xl font-bold">Confirmed consultations</h1><div className="mt-5 space-y-3">{items.map(a=><div key={a._id} className="rounded-xl border p-4"><b>{a.patient?.name}</b><p className="text-sm text-slate-500">{new Date(a.date).toLocaleDateString()} · {a.timeSlot}</p></div>)}{!items.length&&<p className="py-8 text-slate-500">No confirmed consultations.</p>}</div></section></DashboardShell>; }

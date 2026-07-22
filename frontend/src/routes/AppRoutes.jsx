@@ -14,8 +14,13 @@ import PatientBills from '../pages/patient/Bills';
 import PatientNotifications from '../pages/patient/Notifications';
 import PatientProfile from '../pages/patient/Profile';
 import DoctorDashboard from '../pages/doctor/Dashboard';
+import DoctorAppointments from '../pages/doctor/Appointments';
+import DoctorSchedule from '../pages/doctor/Schedule';
+import DoctorPatients from '../pages/doctor/Patients';
+import DoctorPrescriptions from '../pages/doctor/Prescriptions';
 import ReceptionistDashboard from '../pages/receptionist/Dashboard';
 import AdminDashboard from '../pages/admin/Dashboard';
+import AdminDoctors from '../pages/admin/Doctors';
 import ProtectedRoute from './ProtectedRoute';
 import RoleBasedRoute from './RoleBasedRoute';
 import { USER_ROLES } from '../utils/constants';
@@ -60,6 +65,10 @@ export default function AppRoutes() {
               </ProtectedRoute>
             }
           />
+          <Route path="/doctor/appointments" element={<ProtectedRoute><RoleBasedRoute allowedRoles={[USER_ROLES.DOCTOR]}><DoctorAppointments /></RoleBasedRoute></ProtectedRoute>} />
+          <Route path="/doctor/schedule" element={<ProtectedRoute><RoleBasedRoute allowedRoles={[USER_ROLES.DOCTOR]}><DoctorSchedule /></RoleBasedRoute></ProtectedRoute>} />
+          <Route path="/doctor/patients" element={<ProtectedRoute><RoleBasedRoute allowedRoles={[USER_ROLES.DOCTOR]}><DoctorPatients /></RoleBasedRoute></ProtectedRoute>} />
+          <Route path="/doctor/prescriptions" element={<ProtectedRoute><RoleBasedRoute allowedRoles={[USER_ROLES.DOCTOR]}><DoctorPrescriptions /></RoleBasedRoute></ProtectedRoute>} />
           <Route
             path="/receptionist/dashboard"
             element={
@@ -80,6 +89,7 @@ export default function AppRoutes() {
               </ProtectedRoute>
             }
           />
+          <Route path="/admin/doctors" element={<ProtectedRoute><RoleBasedRoute allowedRoles={[USER_ROLES.ADMIN]}><AdminDoctors /></RoleBasedRoute></ProtectedRoute>} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

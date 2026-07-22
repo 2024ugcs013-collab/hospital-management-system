@@ -5,19 +5,15 @@ import Notification from '../models/Notification.js';
 
 export async function getAppointments(req, res, next) {
   try {
-    const patientId = req.user._id;
     const { status } = req.query;
-
-    let query = { patientId };
+    let query = req.user.role === 'doctor' ? { doctorId: req.user._id } : { patientId: req.user._id };
     if (status && status !== 'all') {
       query.status = status;
     }
 
     const appointments = await Appointment.find(query)
-      .populate({
-        path: 'doctorId',
-        select: 'name email phone profileImage'
-      })
+      .populate({ path: 'doctorId', select: 'name email phone profileImage' })
+      .populate({ path: 'patientId', select: 'name email phone' })
       .sort({ date: 1, timeSlot: 1 });
 
     // Format for frontend consumption
@@ -39,7 +35,8 @@ export async function getAppointments(req, res, next) {
           email: appt.doctorId.email,
           phone: appt.doctorId.phone,
           profileImage: appt.doctorId.profileImage
-        } : null
+        } : null,
+        patient: appt.patientId ? { _id: appt.patientId._id, name: appt.patientId.name, email: appt.patientId.email, phone: appt.patientId.phone } : null
       };
     });
 
@@ -72,7 +69,7 @@ export async function getAppointmentById(req, res, next) {
     }
 
     // Verify ownership
-    if (String(appt.patientId._id) !== String(req.user._id)) {
+    if (req.user.role !== 'admin' && String(req.user._id) !== String(appt.patientId._id) && String(req.user._id) !== String(appt.doctorId._id)) {
       const error = new Error('Unauthorized');
       error.statusCode = 403;
       throw error;
@@ -99,7 +96,12 @@ export async function bookAppointment(req, res, next) {
     }
 
     // Get doctor consultation fee
-    const doctorProfile = await Doctor.findOne({ userId: doctorId });
+    const doctorProfile = await Doctor.findOne({ userId: doctorId, verificationStatus: 'approved' });
+    if (!doctorProfile) {
+      const error = new Error('This doctor is not available for appointments.');
+      error.statusCode = 400;
+      throw error;
+    }
     const fee = doctorProfile ? doctorProfile.consultationFee : 500;
 
     const appointment = await Appointment.create({
@@ -109,10 +111,8 @@ export async function bookAppointment(req, res, next) {
       timeSlot,
       notes,
       fee,
-      status: 'confirmed', // Auto-confirm mock booking
-      meetingLink: 'https://zoom.us/mock-meeting-id',
-      paymentStatus: 'paid', // Mark as paid for mock Razorpay simulation
-      paymentId: 'pay_' + Math.random().toString(36).substring(2, 10).toUpperCase()
+      status: 'pending',
+      paymentStatus: 'pending'
     });
 
     // Create Notification
@@ -132,6 +132,25 @@ export async function bookAppointment(req, res, next) {
   } catch (error) {
     next(error);
   }
+}
+
+export async function updateAppointmentStatus(req, res, next) {
+  try {
+    const { status } = req.body;
+    if (!['confirmed', 'cancelled', 'completed'].includes(status)) {
+      const error = new Error('Invalid appointment status.'); error.statusCode = 400; throw error;
+    }
+    const appointment = await Appointment.findById(req.params.id);
+    if (!appointment) { const error = new Error('Appointment not found'); error.statusCode = 404; throw error; }
+    if (req.user.role !== 'admin' && String(appointment.doctorId) !== String(req.user._id)) {
+      const error = new Error('Only the assigned doctor can update this request.'); error.statusCode = 403; throw error;
+    }
+    appointment.status = status;
+    if (status === 'confirmed' && !appointment.meetingLink) appointment.meetingLink = 'https://meet.example.com/appointment-' + appointment._id;
+    await appointment.save();
+    await Notification.create({ userId: appointment.patientId, title: `Appointment ${status}`, message: `Your appointment request has been ${status} by the doctor.`, type: 'appointment' });
+    res.json({ success: true, appointment });
+  } catch (error) { next(error); }
 }
 
 export async function rescheduleAppointment(req, res, next) {

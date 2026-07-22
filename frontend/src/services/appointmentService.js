@@ -24,3 +24,8 @@ export async function rescheduleAppointment(id, payload) {
   const response = await api.put(`/appointments/${id}/reschedule`, payload);
   return response.data;
 }
+
+export async function updateAppointmentStatus(id, status) {
+  const response = await api.put(`/appointments/${id}/status`, { status });
+  return response.data?.appointment;
+}

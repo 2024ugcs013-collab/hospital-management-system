@@ -1,3 +1,5 @@
-export default function MedicalRecords() {
-  return <section>Medical Records</section>;
-}
+import { useEffect, useState } from 'react';
+import DashboardShell from '../../components/dashboard/DashboardShell';
+import { patientSidebarItems } from '../../data/patientNavigation';
+import { getMedicalHistory } from '../../services/patientService';
+export default function MedicalRecords() { const [records, setRecords] = useState([]); useEffect(() => { getMedicalHistory().then(r => setRecords(r.medicalRecords || [])).catch(() => setRecords([])); }, []); return <DashboardShell title="Medical records" sidebarItems={patientSidebarItems}><section className="rounded-3xl bg-white p-6 shadow-sm"><h1 className="text-2xl font-bold">Medical records</h1><p className="mt-1 text-sm text-slate-500">Clinical records shared by your care team.</p><div className="mt-5 space-y-3">{records.map(r => <article key={r._id} className="rounded-2xl border p-4"><p className="font-semibold">{r.diagnosis || r.title || 'Consultation record'}</p><p className="mt-1 text-sm text-slate-500">{new Date(r.date || r.createdAt).toLocaleDateString()} · {r.doctorId?.name || 'Doctor'}</p><p className="mt-2 text-sm text-slate-700">{r.notes || r.description || 'No additional notes.'}</p></article>)}{!records.length && <p className="py-10 text-center text-slate-500">No medical records have been added yet.</p>}</div></section></DashboardShell>; }

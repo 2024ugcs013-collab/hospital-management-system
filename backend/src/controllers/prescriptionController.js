@@ -3,16 +3,15 @@ import User from '../models/User.js';
 
 export async function getPrescriptions(req, res, next) {
   try {
-    const patientId = req.user._id;
     const { search } = req.query;
-
-    let query = { patientId };
+    let query = req.user.role === 'doctor' ? { doctorId: req.user._id } : { patientId: req.user._id };
 
     const prescriptions = await Prescription.find(query)
       .populate({
         path: 'doctorId',
         select: 'name email phone profileImage'
       })
+      .populate({ path: 'patientId', select: 'name email phone' })
       .sort({ issueDate: -1 });
 
     // Client-side text search if query exists
@@ -34,6 +33,15 @@ export async function getPrescriptions(req, res, next) {
   } catch (error) {
     next(error);
   }
+}
+
+export async function createPrescription(req, res, next) {
+  try {
+    const { patientId, appointmentId, medicineName, dosage, duration, notes } = req.body;
+    if (!patientId || !medicineName || !dosage || !duration) { const error = new Error('Patient and medicine details are required.'); error.statusCode = 400; throw error; }
+    const prescription = await Prescription.create({ patientId, appointmentId, doctorId: req.user._id, medicines: [{ name: medicineName, dosage, duration }], notes });
+    res.status(201).json({ success: true, prescription });
+  } catch (error) { next(error); }
 }
 
 export async function getPrescriptionById(req, res, next) {

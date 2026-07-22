@@ -7,6 +7,7 @@ import prescriptionRoutes from './routes/prescriptionRoutes.js';
 import storeRoutes from './routes/storeRoutes.js';
 import patientRoutes from './routes/patientRoutes.js';
 import notificationRoutes from './routes/notificationRoutes.js';
+import adminRoutes from './routes/adminRoutes.js';
 import { seedDatabase } from './controllers/seedController.js';
 import { errorMiddleware, notFoundMiddleware } from './middleware/errorMiddleware.js';
 
@@ -31,6 +32,7 @@ app.use('/api/prescriptions', prescriptionRoutes);
 app.use('/api/store', storeRoutes);
 app.use('/api/patients', patientRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/admin', adminRoutes);
 app.get('/api/seed', seedDatabase);
 
 app.use(notFoundMiddleware);

@@ -69,6 +69,15 @@ export async function seedDatabase(req, res, next) {
     const salt = await bcrypt.genSalt(10);
     const hashedMockPassword = await bcrypt.hash('password123', salt);
 
+    // Local development administrator. Change/remove this account outside demo use.
+    let admin = await User.findOne({ email: 'admin@hospital.local' });
+    if (!admin) {
+      admin = await User.create({
+        name: 'System Administrator', email: 'admin@hospital.local', phone: '9999999999',
+        password: 'password123', role: 'admin', isVerified: true
+      });
+    }
+
     const doctorsList = [];
     for (const d of doctorDetails) {
       let user = await User.findOne({ email: d.email });

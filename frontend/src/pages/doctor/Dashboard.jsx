@@ -1,37 +1,7 @@
-import DashboardPage from '../../components/dashboard/DashboardPage';
+import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
+import DashboardShell from '../../components/dashboard/DashboardShell';
 import { dashboardContent } from '../../data/dashboardContent';
 import { USER_ROLES } from '../../utils/constants';
-
-export default function Dashboard() {
-  const config = dashboardContent[USER_ROLES.DOCTOR];
-
-  return (
-    <DashboardPage role={USER_ROLES.DOCTOR} config={config}>
-      <section id="overview" className="grid gap-6 xl:grid-cols-[1.3fr_0.7fr]">
-        <div className="rounded-[1.75rem] bg-white p-6 shadow-sm">
-          <h3 className="text-lg font-semibold text-slate-900">Welcome Card</h3>
-          <p className="mt-3 text-sm leading-7 text-slate-600">Review today&apos;s patient queue, open reports, and pending prescriptions.</p>
-        </div>
-        <div className="rounded-[1.75rem] bg-brand-50 p-6">
-          <p className="text-sm font-semibold text-brand-700">Next consultation</p>
-          <p className="mt-3 text-sm leading-7 text-slate-700">Four follow-up appointments are waiting for your review.</p>
-        </div>
-      </section>
-
-      <section id="schedule" className="rounded-[1.75rem] bg-white p-6 shadow-sm">
-        <h3 className="text-lg font-semibold text-slate-900">Schedule</h3>
-        <p className="mt-3 text-sm leading-7 text-slate-600">Time blocks, availability, and consult schedules will be rendered here.</p>
-      </section>
-
-      <section id="patients" className="rounded-[1.75rem] bg-white p-6 shadow-sm">
-        <h3 className="text-lg font-semibold text-slate-900">Patients</h3>
-        <p className="mt-3 text-sm leading-7 text-slate-600">Patient charts, consultation notes, and report generation will appear here.</p>
-      </section>
-
-      <section id="reports" className="rounded-[1.75rem] bg-white p-6 shadow-sm">
-        <h3 className="text-lg font-semibold text-slate-900">Reports</h3>
-        <p className="mt-3 text-sm leading-7 text-slate-600">Lab result summaries, visit reports, and exports belong in this area.</p>
-      </section>
-    </DashboardPage>
-  );
-}
+import { getAppointments } from '../../services/appointmentService';
+export default function Dashboard() { const [items, setItems] = useState([]); useEffect(() => { getAppointments().then(setItems); }, []); const pending = items.filter(a => a.status === 'pending'); return <DashboardShell title="Doctor dashboard" sidebarItems={dashboardContent[USER_ROLES.DOCTOR].sidebarItems}><section className="grid gap-4 sm:grid-cols-3"><div className="rounded-2xl bg-white p-5 shadow-sm"><p className="text-sm text-slate-500">Appointment requests</p><p className="mt-2 text-3xl font-bold">{pending.length}</p></div><div className="rounded-2xl bg-white p-5 shadow-sm"><p className="text-sm text-slate-500">Scheduled visits</p><p className="mt-2 text-3xl font-bold">{items.filter(a => a.status === 'confirmed').length}</p></div><div className="rounded-2xl bg-white p-5 shadow-sm"><p className="text-sm text-slate-500">Patients</p><p className="mt-2 text-3xl font-bold">{new Set(items.map(a => a.patient?._id)).size}</p></div></section><section className="rounded-3xl bg-white p-6 shadow-sm"><div className="flex justify-between"><h1 className="text-xl font-bold">Pending requests</h1><Link className="font-semibold text-brand-700" to="/doctor/appointments">Manage all</Link></div><div className="mt-4 space-y-3">{pending.slice(0,4).map(a => <div key={a._id} className="rounded-xl border p-3"><b>{a.patient?.name}</b><p className="text-sm text-slate-500">{new Date(a.date).toLocaleDateString()} · {a.timeSlot}</p></div>)}{!pending.length && <p className="text-slate-500">No pending requests.</p>}</div></section></DashboardShell>; }
