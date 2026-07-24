@@ -30,16 +30,19 @@ const allowedOrigins = [
 app.use(
   cors({
     origin(origin, callback) {
-      // Allow Postman, mobile apps, server-to-server requests
+      // Allow requests without origin (Postman, Render health checks, etc.)
       if (!origin) return callback(null, true);
 
       if (allowedOrigins.includes(origin)) {
         return callback(null, true);
       }
 
+      console.log('Blocked CORS Origin:', origin);
       return callback(new Error('Not allowed by CORS'));
     },
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
   })
 );
 
@@ -56,8 +59,7 @@ app.use(express.urlencoded({ extended: true }));
 
 app.get('/health', (_req, res) => {
   res.status(200).json({
-    success: true,
-    status: 'Server is running',
+    status: 'ok',
   });
 });
 
