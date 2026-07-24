@@ -5,6 +5,7 @@ import Login from '../pages/auth/Login';
 import Register from '../pages/auth/Register';
 import ForgotPassword from '../pages/auth/ForgotPassword';
 import Home from '../pages/Home';
+import DoctorProfile from '../pages/DoctorProfile';
 import PatientDashboard from '../pages/patient/Dashboard';
 import PatientBookAppointment from '../pages/patient/BookAppointment';
 import PatientAppointments from '../pages/patient/AppointmentHistory';
@@ -38,6 +39,7 @@ export default function AppRoutes() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Home />} />
+        <Route path="/doctors/:id" element={<DoctorProfile />} />
         <Route element={<AuthLayout />}>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
