@@ -5,6 +5,8 @@ import Doctor from '../models/Doctor.js';
 import generateToken from '../utils/generateToken.js';
 import { uploadBufferToCloudinary } from '../config/cloudinary.js';
 import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
+import { sendEmail } from '../services/emailService.js';
 const memoryStore = globalThis.__hmsMemoryStore || (globalThis.__hmsMemoryStore = {
   users: [],
   patients: [],
@@ -65,6 +67,16 @@ async function saveUser(data) {
   };
 
   memoryStore.users.push(user);
+  return user;
+}
+
+async function persistUser(user, updates) {
+  if (usingMongo()) {
+    Object.assign(user, updates);
+    return user.save();
+  }
+
+  Object.assign(user, updates, { updatedAt: new Date().toISOString() });
   return user;
 }
 
@@ -264,9 +276,78 @@ export async function getCurrentUser(req, res, next) {
   }
 }
 
-export async function forgotPassword(_req, res) {
-  res.status(200).json({
-    success: true,
-    message: 'Password reset flow is not active yet.',
-  });
+export async function forgotPassword(req, res, next) {
+  try {
+    const { email } = req.body;
+    const user = await findUserByEmail(email);
+
+    if (!user) {
+      res.status(200).json({
+        success: true,
+        message: 'If the email exists, a reset link has been sent.',
+      });
+      return;
+    }
+
+    const token = crypto.randomBytes(32).toString('hex');
+    const resetPasswordToken = crypto.createHash('sha256').update(token).digest('hex');
+    const resetPasswordExpires = new Date(Date.now() + 30 * 60 * 1000);
+
+    await persistUser(user, { resetPasswordToken, resetPasswordExpires });
+
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    const resetUrl = `${frontendUrl.replace(/\/$/, '')}/reset-password?token=${token}&email=${encodeURIComponent(user.email)}`;
+
+    await sendEmail({
+      to: user.email,
+      subject: 'Reset your password',
+      text: `Reset your password using this link: ${resetUrl}\nThis link expires in 30 minutes.`,
+      html: `<p>Reset your password using this link:</p><p><a href="${resetUrl}">${resetUrl}</a></p><p>This link expires in 30 minutes.</p>`,
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'If the email exists, a reset link has been sent.',
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function resetPassword(req, res, next) {
+  try {
+    const { token, password } = req.body;
+    const resetPasswordToken = crypto.createHash('sha256').update(token).digest('hex');
+
+    let user = null;
+
+    if (usingMongo()) {
+      user = await User.findOne({
+        resetPasswordToken,
+        resetPasswordExpires: { $gt: new Date() },
+      });
+    } else {
+      user = memoryStore.users.find((item) => item.resetPasswordToken === resetPasswordToken && item.resetPasswordExpires && new Date(item.resetPasswordExpires) > new Date()) || null;
+    }
+
+    if (!user) {
+      const error = new Error('Reset link is invalid or has expired.');
+      error.statusCode = 400;
+      throw error;
+    }
+
+    const hashedPassword = usingMongo() ? password : await bcrypt.hash(password, 10);
+    await persistUser(user, {
+      password: hashedPassword,
+      resetPasswordToken: '',
+      resetPasswordExpires: null,
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Password updated successfully.',
+    });
+  } catch (error) {
+    next(error);
+  }
 }

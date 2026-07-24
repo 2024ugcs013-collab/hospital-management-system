@@ -37,6 +37,11 @@ export async function forgotPassword(payload) {
   return response.data;
 }
 
+export async function resetPassword(payload) {
+  const response = await api.post('/auth/reset-password', payload);
+  return response.data;
+}
+
 export async function getCurrentUser() {
   const response = await api.get('/auth/me');
   return response.data;

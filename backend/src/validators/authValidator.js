@@ -24,6 +24,11 @@ export const loginValidator = [
 
 export const forgotPasswordValidator = [body('email').isEmail().withMessage('Enter a valid email address.')];
 
+export const resetPasswordValidator = [
+  body('token').trim().notEmpty().withMessage('Reset token is required.'),
+  body('password').isLength({ min: 8 }).withMessage('Password must be at least 8 characters.'),
+];
+
 export function validateRequest(req, res, next) {
   const result = validationResult(req);
 
